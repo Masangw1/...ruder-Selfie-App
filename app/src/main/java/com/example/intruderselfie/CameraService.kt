@@ -3,6 +3,7 @@ package com.example.intruderselfie
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
+import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import androidx.camera.core.CameraSelector
@@ -11,20 +12,33 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
 import java.io.DataOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-class CameraService : LifecycleService() {
+class CameraService : Service(), LifecycleOwner {
 
-    // 🔑 REPLACE WITH YOUR TELEGRAM CREDENTIALS
-    private val BOT_TOKEN = "8897914052:AAFuBHgNCbsYSluDwTi3If8Bz03OrOARIaE"
-    private val CHAT_ID = "5081465974"
+    // 🔑 Replace with your Telegram credentials
+    private val BOT_TOKEN = "YOUR_BOT_TOKEN_HERE"
+    private val CHAT_ID = "YOUR_CHAT_ID_HERE"
 
     private val TELEGRAM_URL = "https://api.telegram.org/bot$BOT_TOKEN/sendPhoto"
+
+    // LifecycleRegistry for CameraX binding
+    private val lifecycleRegistry = LifecycleRegistry(this)
+
+    override fun onCreate() {
+        super.onCreate()
+        // Set lifecycle state to RESUMED so CameraX can bind
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_CREATE)
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_START)
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_RESUME)
+    }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForegroundServiceNotification()
@@ -54,10 +68,10 @@ class CameraService : LifecycleService() {
             val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
 
             try {
-                // UNBIND anything previously bound
+                // Unbind anything previously bound
                 cameraProvider.unbindAll()
 
-                // ✅ BIND the camera to this service's lifecycle (this is the fix!)
+                // ✅ Bind to this service's lifecycle (we are a LifecycleOwner)
                 cameraProvider.bindToLifecycle(this, cameraSelector, imageCapture)
 
                 val file = File(externalCacheDir, "intruder_${System.currentTimeMillis()}.jpg")
@@ -68,7 +82,7 @@ class CameraService : LifecycleService() {
                     ContextCompat.getMainExecutor(this),
                     object : ImageCapture.OnImageSavedCallback {
                         override fun onImageSaved(outputFileResults: ImageCapture.OutputFileResults) {
-                            // Photo captured! Send it to Telegram.
+                            // Photo captured – send it to Telegram
                             sendPhotoToTelegram(file)
                         }
 
@@ -85,9 +99,6 @@ class CameraService : LifecycleService() {
         }, ContextCompat.getMainExecutor(this))
     }
 
-    // ------------------------------------------------------------------
-    // 📤 SEND PHOTO TO TELEGRAM BOT
-    // ------------------------------------------------------------------
     private fun sendPhotoToTelegram(file: File) {
         Thread {
             var connection: HttpURLConnection? = null
@@ -137,13 +148,28 @@ class CameraService : LifecycleService() {
                 } else {
                     android.util.Log.e("IntruderSelfie", "❌ Telegram upload failed. Code: $responseCode")
                 }
-
             } catch (e: Exception) {
                 android.util.Log.e("IntruderSelfie", "❌ Error sending to Telegram: ${e.message}")
             } finally {
                 connection?.disconnect()
+                // Clean up: unbind camera and stop service
+                try {
+                    val cameraProvider = ProcessCameraProvider.getInstance(this).get()
+                    cameraProvider.unbindAll()
+                } catch (_: Exception) { }
                 stopSelf()
             }
         }.start()
     }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        // Clean up lifecycle
+        lifecycleRegistry.handleLifecycleEvent(Lifecycle.Event.ON_DESTROY)
+    }
+
+    // --- LifecycleOwner implementation ---
+    override fun getLifecycle(): Lifecycle = lifecycleRegistry
+
+    override fun onBind(intent: Intent?): IBinder? = null
 }
