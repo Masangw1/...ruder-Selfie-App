@@ -20,10 +20,8 @@ class MainActivity : AppCompatActivity() {
 
         val statusText = findViewById<TextView>(R.id.status_text)
 
-        // Check if camera permission is granted
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
             != PackageManager.PERMISSION_GRANTED) {
-            // Request the permission
             ActivityCompat.requestPermissions(
                 this,
                 arrayOf(Manifest.permission.CAMERA),
@@ -31,7 +29,7 @@ class MainActivity : AppCompatActivity() {
             )
             statusText.text = "Requesting camera permission..."
         } else {
-            statusText.text = "✅ Camera permission granted! The app is ready."
+            statusText.text = "✅ Camera permission granted! Ready."
         }
     }
 
@@ -44,7 +42,7 @@ class MainActivity : AppCompatActivity() {
         if (requestCode == CAMERA_PERMISSION_REQUEST_CODE) {
             val statusText = findViewById<TextView>(R.id.status_text)
             if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                statusText.text = "✅ Camera permission granted! The app is ready."
+                statusText.text = "✅ Camera permission granted! Ready."
             } else {
                 statusText.text = "❌ Camera permission required. Please grant it in Settings."
             }
