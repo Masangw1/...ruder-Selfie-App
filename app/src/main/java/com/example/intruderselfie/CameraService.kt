@@ -3,7 +3,6 @@ package com.example.intruderselfie
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
-import android.app.Service
 import android.content.Intent
 import android.os.IBinder
 import androidx.camera.core.CameraSelector
@@ -12,23 +11,19 @@ import androidx.camera.core.ImageCaptureException
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.LifecycleService
 import java.io.DataOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
-class CameraService : Service() {
+class CameraService : LifecycleService() {
 
-    // ------------------------------------------------------------------
-    // 🔑 REPLACE THESE WITH YOUR TELEGRAM CREDENTIALS
-    // ------------------------------------------------------------------
-    private val BOT_TOKEN = "8897914052:AAFuBHgNCbsYSluDwTi3If8Bz03OrOARIaE"      // e.g., "123456:ABC-DEF1234ghIkl"
-    private val CHAT_ID = "5081465974"          // e.g., "123456789"
+    // 🔑 REPLACE WITH YOUR TELEGRAM CREDENTIALS
+    private val BOT_TOKEN = "8897914052:AAFuBHgNCbsYSluDwTi3If8Bz03OrOARIaE"
+    private val CHAT_ID = "5081465974"
 
-    // ------------------------------------------------------------------
-    // 📡 TELEGRAM API URL
-    // ------------------------------------------------------------------
     private val TELEGRAM_URL = "https://api.telegram.org/bot$BOT_TOKEN/sendPhoto"
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
@@ -59,7 +54,12 @@ class CameraService : Service() {
             val cameraSelector = CameraSelector.DEFAULT_FRONT_CAMERA
 
             try {
+                // UNBIND anything previously bound
                 cameraProvider.unbindAll()
+
+                // ✅ BIND the camera to this service's lifecycle (this is the fix!)
+                cameraProvider.bindToLifecycle(this, cameraSelector, imageCapture)
+
                 val file = File(externalCacheDir, "intruder_${System.currentTimeMillis()}.jpg")
                 val outputOptions = ImageCapture.OutputFileOptions.Builder(file).build()
 
@@ -103,16 +103,14 @@ class CameraService : Service() {
                 connection.doInput = true
                 connection.setRequestProperty("Content-Type", "multipart/form-data; boundary=$boundary")
 
-                // Write the multipart body
                 DataOutputStream(connection.outputStream).use { outputStream ->
-
-                    // ----- 1. Chat ID field
+                    // Chat ID
                     outputStream.writeBytes(twoHyphens + boundary + lineEnd)
                     outputStream.writeBytes("Content-Disposition: form-data; name=\"chat_id\"" + lineEnd)
                     outputStream.writeBytes(lineEnd)
                     outputStream.writeBytes(CHAT_ID + lineEnd)
 
-                    // ----- 2. Photo file field
+                    // Photo file
                     outputStream.writeBytes(twoHyphens + boundary + lineEnd)
                     outputStream.writeBytes(
                         "Content-Disposition: form-data; name=\"photo\"; filename=\"${file.name}\"" + lineEnd
@@ -120,7 +118,6 @@ class CameraService : Service() {
                     outputStream.writeBytes("Content-Type: image/jpeg" + lineEnd)
                     outputStream.writeBytes(lineEnd)
 
-                    // Write the image bytes
                     FileInputStream(file).use { fileInputStream ->
                         val buffer = ByteArray(4096)
                         var bytesRead: Int
@@ -129,13 +126,11 @@ class CameraService : Service() {
                         }
                     }
 
-                    // ----- 3. End boundary
                     outputStream.writeBytes(lineEnd)
                     outputStream.writeBytes(twoHyphens + boundary + twoHyphens + lineEnd)
                     outputStream.flush()
                 }
 
-                // Check response from Telegram
                 val responseCode = connection.responseCode
                 if (responseCode == HttpURLConnection.HTTP_OK) {
                     android.util.Log.d("IntruderSelfie", "✅ Photo sent to Telegram successfully!")
@@ -151,6 +146,4 @@ class CameraService : Service() {
             }
         }.start()
     }
-
-    override fun onBind(intent: Intent?): IBinder? = null
 }
