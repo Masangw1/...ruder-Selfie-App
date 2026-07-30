@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="com.example.intruderselfie">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -19,7 +18,8 @@
 
         <receiver
             android:name=".IntruderAdminReceiver"
-            android:permission="android.permission.BIND_DEVICE_ADMIN">
+            android:permission="android.permission.BIND_DEVICE_ADMIN"
+            android:exported="true">   <!-- Added -->
             <meta-data
                 android:name="android.app.device_admin"
                 android:resource="@xml/device_admin_receiver" />
@@ -31,7 +31,8 @@
         <service
             android:name=".CameraService"
             android:enabled="true"
-            android:exported="false" />
+            android:exported="false" />   <!-- Added -->
 
     </application>
+
 </manifest>
