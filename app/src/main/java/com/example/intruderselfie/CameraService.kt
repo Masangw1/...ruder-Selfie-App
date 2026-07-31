@@ -41,10 +41,12 @@ class CameraService : Service(), LifecycleOwner {
     }
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startForegroundServiceNotification()
-        takeSilentPhoto()
-        return START_NOT_STICKY
-    }
+    // Show a toast message so you know the service started
+    android.widget.Toast.makeText(this, "🔴 Intruder detected! Taking photo...", android.widget.Toast.LENGTH_SHORT).show()
+    startForegroundServiceNotification()
+    takeSilentPhoto()
+    return START_NOT_STICKY
+}
 
     private fun startForegroundServiceNotification() {
         val channelId = "intruder_channel"
