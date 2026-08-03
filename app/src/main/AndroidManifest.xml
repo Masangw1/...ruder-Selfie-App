@@ -1,8 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Permissions -->
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.INTERNET" />   <!-- 👈 This was missing! -->
 
     <application
         android:allowBackup="true"
@@ -19,7 +21,7 @@
         <receiver
             android:name=".IntruderAdminReceiver"
             android:permission="android.permission.BIND_DEVICE_ADMIN"
-            android:exported="true">   <!-- Added -->
+            android:exported="true">
             <meta-data
                 android:name="android.app.device_admin"
                 android:resource="@xml/device_admin_receiver" />
@@ -31,7 +33,7 @@
         <service
             android:name=".CameraService"
             android:enabled="true"
-            android:exported="false" />   <!-- Added -->
+            android:exported="false" />
 
     </application>
 
