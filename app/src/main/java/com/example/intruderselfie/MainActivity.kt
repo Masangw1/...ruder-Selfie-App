@@ -1,7 +1,7 @@
 package com.example.intruderselfie
 
 import android.Manifest
-import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
 import android.os.Bundle
 import android.widget.Button
@@ -17,12 +17,18 @@ class MainActivity : AppCompatActivity() {
         private const val CAMERA_PERMISSION_REQUEST_CODE = 100
     }
 
+    // Create an instance of our unlock receiver
+    private lateinit var unlockReceiver: UnlockReceiver
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         val statusText = findViewById<TextView>(R.id.status_text)
         val testButton = findViewById<Button>(R.id.test_button)
+
+        // Initialize the receiver
+        unlockReceiver = UnlockReceiver()
 
         // Check camera permission
         if (ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
@@ -42,6 +48,24 @@ class MainActivity : AppCompatActivity() {
             Toast.makeText(this, "🔴 Starting camera...", Toast.LENGTH_SHORT).show()
             val serviceIntent = Intent(this, CameraService::class.java)
             startForegroundService(serviceIntent)
+        }
+    }
+
+    // Register the receiver when the app goes to the foreground (or is opened)
+    override fun onResume() {
+        super.onResume()
+        val filter = IntentFilter(Intent.ACTION_USER_PRESENT)
+        registerReceiver(unlockReceiver, filter)
+        Toast.makeText(this, "🛡️ Unlock listener activated!", Toast.LENGTH_SHORT).show()
+    }
+
+    // Unregister the receiver when the app is paused (to avoid memory leaks)
+    override fun onPause() {
+        super.onPause()
+        try {
+            unregisterReceiver(unlockReceiver)
+        } catch (e: IllegalArgumentException) {
+            // Receiver wasn't registered, ignore
         }
     }
 
