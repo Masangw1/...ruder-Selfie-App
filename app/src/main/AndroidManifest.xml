@@ -30,14 +30,6 @@
             </intent-filter>
         </receiver>
 
-        <receiver
-            android:name=".UnlockReceiver"
-            android:exported="true">
-            <intent-filter>
-                <action android:name="android.intent.action.ACTION_USER_PRESENT" />
-            </intent-filter>
-        </receiver>
-
         <service
             android:name=".CameraService"
             android:enabled="true"
